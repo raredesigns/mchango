@@ -1,9 +1,10 @@
 import { Card, Col, Row } from "antd";
 import { Text } from "../text";
+import { ReactNode } from "react";
 
 type Props = {
   title: string;
-  amount: string;
+  amount: string | ReactNode;
   description: string;
 };
 

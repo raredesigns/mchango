@@ -1,4 +1,5 @@
 import { Row, Col } from "antd";
+import SendSMS from "../../components/sms";
 
 export const Messaging = () => {
 
@@ -6,7 +7,7 @@ export const Messaging = () => {
       <div>
         <Row gutter={[32, 32]}>
           <Col xs={24} sm={24} xl={12}>
-            SMS
+            <SendSMS/>
           </Col>
         </Row>
         <Row gutter={[32, 32]} style={{ marginTop: "18px" }}>

@@ -5,9 +5,7 @@ import {
   useEditableTable,
   SaveButton,
   TextField,
-  FilterDropdown,
-  Create,
-  useForm,
+  FilterDropdown,useForm
 } from "@refinedev/antd";
 import {
   List,
@@ -27,6 +25,7 @@ import {
   Select,
   Divider,
   DatePicker,
+  Spin,
 } from "antd";
 import { DeleteIcon, DotsIcon, EditIcon } from "./icons";
 import { currencyNumber } from "../utility/currency-numbers";
@@ -34,7 +33,7 @@ import { Text } from "./text";
 import { formatMobile } from "../utility/format-mobile";
 import { useState } from "react";
 import { countryCodes } from "../constants";
-import { useCreate, useSelect } from "@refinedev/core";
+import { useCreate, useGo, useSelect } from "@refinedev/core";
 import { toProperCase } from "../utility/propercase";
 
 interface PlotsEditableTableProps {
@@ -45,17 +44,13 @@ const items: MenuProps["items"] = [
   {
     key: "1",
     label: (
-      <a rel="noopener noreferrer" href="/sms">
-        Ongeza Mkeka
-      </a>
+      <Button type="link" color="default" variant="link">Ongeza Mkeka</Button>
     ),
   },
   {
     key: "2",
     label: (
-      <a rel="noopener noreferrer" href="/profile">
-        Share Mkeka
-      </a>
+      <Button type="link" color="default" variant="link">Share Mkeka</Button>
     ),
   },
 ];
@@ -63,6 +58,8 @@ const items: MenuProps["items"] = [
 const PlotsEditableTable = ({
   children,
 }: React.PropsWithChildren<PlotsEditableTableProps>) => {
+  const go = useGo()
+
   const [openAhadi, setOpenAhadi] = useState(false);
   const [openMchango, setOpenMchango] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -83,8 +80,8 @@ const PlotsEditableTable = ({
     action: "create",
   });
 
-  const { mutate: addAhadi, isLoading: addAhadiLoading } = useCreate();
-  const { mutate: addMchango, isLoading: addMchangoLoading } = useCreate();
+  const { mutate: addAhadi } = useCreate();
+  const { mutate: addMchango } = useCreate();
 
   const { options: pledgers } = useSelect<{
     firstName?: string;
@@ -96,7 +93,10 @@ const PlotsEditableTable = ({
     optionValue: "mobile",
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any  
   const handleAhadiSubmit = async (values: any) => {
+    setConfirmLoading(true);
+
     addAhadi({
       resource: "pledgers",
       values: {
@@ -106,24 +106,30 @@ const PlotsEditableTable = ({
         mobile: values.mobile,
         pledge: values.pledge,
       },
-      successNotification: (data, values, resource) => {
+      successNotification: (data) => {
+        console.log(data)
         return {
-          message: "Pledger Added",
-          description: "Successful",
+          message: `Pledge of ${currencyNumber(data?.data.pledge)} from ${data?.data.firstName} added!`,
+          description: "Success",
           type: "success",
         };
       },
     });
-
-    setConfirmLoading(true);
+  
     setTimeout(() => {
       setOpenAhadi(false);
       ahadiForm.resetFields();
       setConfirmLoading(false);
+      go({
+        to: "/",
+        type: "push"
+      })
     }, 2000);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleMchangoSubmit = async (values: any) => {
+    setConfirmLoading(true);
     addMchango({
       resource: "collections",
       values: {
@@ -131,23 +137,23 @@ const PlotsEditableTable = ({
         mobile: values.mobile,
         amount: values.amount,
       },
-      successNotification: (data, values, resource) => {
-         console.log(data);
+      successNotification: (data) => {
         return {
-          message: "Mchango Added",
+          message: `Mchango of ${currencyNumber(data?.data.amount)} added!`,
           description: "Successful",
           type: "success",
         };
       },
     });
 
-   
-
-    setConfirmLoading(true);
     setTimeout(() => {
       setOpenMchango(false);
       mchangoForm.resetFields();
       setConfirmLoading(false);
+      go({
+        to: "/",
+        type: "push"
+      })
     }, 2000);
   };
 
@@ -169,9 +175,8 @@ const PlotsEditableTable = ({
     saveButtonProps,
     cancelButtonProps,
     editButtonProps,
-    filters,
   } = useEditableTable({
-    resource: "pledgers",
+    resource: "mkeka",
     syncWithLocation: true,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSearch: (value: any) => {
@@ -199,7 +204,9 @@ const PlotsEditableTable = ({
                 firstName,
                 lastName,
                 mobile,
-                pledge`,
+                amount,
+                paid,
+                balance`,
     },
   });
 
@@ -292,12 +299,8 @@ const PlotsEditableTable = ({
                 }}
               />
               <Table.Column
-                dataIndex="pledge"
+                dataIndex="amount"
                 title="Pledge"
-                //   defaultFilteredValue={getDefaultFilter(
-                //     "surveyedPlotSize",
-                //     filters
-                //   )}
                 render={(value, record) => {
                   if (isEditing(record.id)) {
                     return (
@@ -309,6 +312,20 @@ const PlotsEditableTable = ({
                   return <TextField value={currencyNumber(value)} />;
                 }}
               />
+              <Table.Column
+                dataIndex="paid"
+                title="Paid"
+                render={(value) => {
+                  return <TextField value={currencyNumber(value)} />;
+                }}
+              />
+              <Table.Column
+                dataIndex="balance"
+                title="Balance"
+                render={(value) => {
+                  return <TextField value={currencyNumber(value)} />;
+                }}
+              />                         
               <Table.Column
                 title=""
                 dataIndex="actions"
@@ -362,97 +379,98 @@ const PlotsEditableTable = ({
         footer={false}
         onCancel={handleAhadiCancel}
       >
-        <Form
-          {...ahadiFormProps}
-          layout="vertical"
-          onFinish={handleAhadiSubmit}
-          form={ahadiForm}
-        >
-          <Divider />
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="firstName"
-                label="Jina la Kwanza"
-                rules={[{ required: true, message: "Tafadhali weka jina" }]}
-              >
-                <Input />
+        <Spin spinning={confirmLoading}>
+          <Form
+            {...ahadiFormProps}
+            layout="vertical"
+            onFinish={handleAhadiSubmit}
+            form={ahadiForm}
+          >
+            <Divider />
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="firstName"
+                  label="Jina la Kwanza"
+                  rules={[{ required: true, message: "Tafadhali weka jina" }]}
+                >
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="lastName"
+                  label="Jina la Ukoo"
+                  rules={[
+                    { required: false, message: "Tafadhali weka jina la ukoo" },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="countryCode"
+                  label="Nchi"
+                  rules={[{ required: true, message: "Chagua nchi" }]}
+                >
+                  <Select
+                    placeholder="Country Code"
+                    options={countryCodes}
+                    optionRender={(option) => (
+                      <Space>
+                        {option.data.flag}
+                        {option.data.country}
+                        <span style={{ fontSize: 11 }}>{option.data.value}</span>
+                      </Space>
+                    )}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="mobile"
+                  label="Namba ya Simu"
+                  rules={[{ required: true, message: "Namba ya Simu" }]}
+                >
+                  <InputNumber style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={16}>
+                <Form.Item
+                  name="pledge"
+                  label="Kiasi Cha Ahadi"
+                  rules={[{ required: true, message: "Tafadhali weka Ahadi" }]}
+                >
+                  <InputNumber
+                    addonBefore="Tshs."
+                    formatter={(value) =>
+                      `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                    }
+                    parser={(value) =>
+                      value?.replace(/\$\s?|(,*)/g, "") as unknown as number
+                    }
+                    style={{ width: "152%" }}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Space direction="horizontal" style={{ marginTop: 8 }}>
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                >
+                  Save
+                </Button>
               </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="lastName"
-                label="Jina la Ukoo"
-                rules={[
-                  { required: false, message: "Tafadhali weka jina la ukoo" },
-                ]}
-              >
-                <Input />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="countryCode"
-                label="Nchi"
-                rules={[{ required: true, message: "Chagua nchi" }]}
-              >
-                <Select
-                  placeholder="Country Code"
-                  options={countryCodes}
-                  optionRender={(option) => (
-                    <Space>
-                      {option.data.flag}
-                      {option.data.country}
-                      <span style={{ fontSize: 11 }}>{option.data.value}</span>
-                    </Space>
-                  )}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="mobile"
-                label="Namba ya Simu"
-                rules={[{ required: true, message: "Namba ya Simu" }]}
-              >
-                <InputNumber style={{ width: "100%" }} />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={16}>
-              <Form.Item
-                name="pledge"
-                label="Kiasi Cha Ahadi"
-                rules={[{ required: true, message: "Tafadhali weka Ahadi" }]}
-              >
-                <InputNumber
-                  addonBefore="Tshs."
-                  formatter={(value) =>
-                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
-                  parser={(value) =>
-                    value?.replace(/\$\s?|(,*)/g, "") as unknown as number
-                  }
-                  style={{ width: "152%" }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Space direction="horizontal" style={{ marginTop: 8 }}>
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={addAhadiLoading}
-              >
-                Save
-              </Button>
-            </Form.Item>
-          </Space>
-        </Form>
+            </Space>
+          </Form>
+        </Spin>
       </Modal>
 
       <Modal
@@ -461,68 +479,69 @@ const PlotsEditableTable = ({
         footer={false}
         onCancel={handleMchangoCancel}
       >
-        <Form
-          {...mchangoFormProps}
-          layout="vertical"
-          onFinish={handleMchangoSubmit}
-          form={mchangoForm}
-        >
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="date"
-                label="Tarehe"
-                rules={[{ required: true, message: "Tafadhali weka jina" }]}
-              >
-                <DatePicker format={"MMM DD, YYYY"} style={{ width: "100%" }} />
+        <Spin spinning={confirmLoading}>
+          <Form
+            {...mchangoFormProps}
+            layout="vertical"
+            onFinish={handleMchangoSubmit}
+            form={mchangoForm}
+          >
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="date"
+                  label="Tarehe"
+                  rules={[{ required: true, message: "Tafadhali weka jina" }]}
+                >
+                  <DatePicker format={"MMM DD, YYYY"} style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="mobile"
+                  label="Mtoa Ahadi"
+                  rules={[{ required: true, message: "Chagua Mtoa Ahadi" }]}
+                >
+                  <Select
+                    options={pledgers}
+                    showSearch
+                    optionFilterProp="label"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={16}>
+                <Form.Item
+                  name="amount"
+                  label="Kiasi Cha Ahadi"
+                  rules={[{ required: true, message: "Tafadhali weka Ahadi" }]}
+                >
+                  <InputNumber
+                    addonBefore="Tshs."
+                    formatter={(value) =>
+                      `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                    }
+                    parser={(value) =>
+                      value?.replace(/\$\s?|(,*)/g, "") as unknown as number
+                    }
+                    style={{ width: "152%" }}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Space direction="horizontal" style={{ marginTop: 8 }}>
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                >
+                  Save
+                </Button>
               </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="mobile"
-                label="Mtoa Ahadi"
-                rules={[{ required: true, message: "Chagua Mtoa Ahadi" }]}
-              >
-                <Select
-                  options={pledgers}
-                  showSearch
-                  optionFilterProp="label"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={16}>
-              <Form.Item
-                name="amount"
-                label="Kiasi Cha Ahadi"
-                rules={[{ required: true, message: "Tafadhali weka Ahadi" }]}
-              >
-                <InputNumber
-                  addonBefore="Tshs."
-                  formatter={(value) =>
-                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
-                  parser={(value) =>
-                    value?.replace(/\$\s?|(,*)/g, "") as unknown as number
-                  }
-                  style={{ width: "152%" }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Space direction="horizontal" style={{ marginTop: 8 }}>
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={addMchangoLoading}
-              >
-                Save
-              </Button>
-            </Form.Item>
-          </Space>
-        </Form>
+            </Space>
+          </Form>
+        </Spin>
       </Modal>
     </>
   );

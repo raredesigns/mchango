@@ -16,7 +16,7 @@ export const resources: IResourceItem[] = [
         list: "/",
         meta: {
             label: "Home",
-            icon: <AltHome/>
+            icon: <AltHome/>,
         }
     },
     {

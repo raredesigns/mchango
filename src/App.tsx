@@ -1,4 +1,4 @@
-import { Authenticated, Refine } from "@refinedev/core";
+import { Action, Authenticated, IResourceItem, Refine } from "@refinedev/core";
 import { DevtoolsPanel, DevtoolsProvider } from "@refinedev/devtools";
 import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
 
@@ -28,6 +28,19 @@ import { resources } from "./config/resources";
 import { Home } from "./pages/home";
 import { Messaging } from "./pages/sms";
 import { Profile } from "./pages/profile";
+import { toProperCase } from "./utility/propercase";
+
+const customTitleHandler = ({ resource, action, params }:{resource?: IResourceItem,action?: Action,params?: Record<string, string | undefined>;}) => {
+  let title = "Mchango App"; // Default title
+
+  if (resource && action) {
+      title = `${toProperCase(resource.name)} | Mchango App`;
+      if (params?.id) {
+          title += ` - ${params.id}`;
+      }
+  }
+  return title;
+};
 
 function App() {
   return (
@@ -110,7 +123,7 @@ function App() {
 
                 <RefineKbar />
                 <UnsavedChangesNotifier />
-                <DocumentTitleHandler />
+                <DocumentTitleHandler handler={customTitleHandler}/>
               </Refine>
               <DevtoolsPanel />
             </DevtoolsProvider>
