@@ -1,10 +1,10 @@
-import { Card, Col, Row } from "antd";
-import { Text } from "../text";
-import { ReactNode } from "react";
+import {Card, Col, Row} from "antd";
+import {Text} from "../text";
+import CountUp from "react-countup";
 
 type Props = {
   title: string;
-  amount: string | ReactNode;
+    amount: number | string;
   description: string;
 };
 
@@ -33,7 +33,8 @@ const DataCard = ({ title, amount, description }: Props) => {
     >
       <Col style={{ width: "100%", paddingTop: "0.5rem" }}>
         <Text size="lg" style={{ marginTop: "0.5rem", fontWeight: "bold" }}>
-          {amount}
+            <CountUp end={typeof amount === "number" ? amount : parseFloat(amount)} delay={0} prefix="Tshs. "
+                     duration={3}/>
         </Text>
         <Row
           style={{
