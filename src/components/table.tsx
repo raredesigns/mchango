@@ -4,7 +4,7 @@ import {useList} from "@refinedev/core";
 import {currencyNumber} from "../utility/currency-numbers";
 import {SMSBox} from "./sms-send-box";
 
-//TO-DO
+//TO DO
 // Fix table row selection via the state variables
 // Update handle OK on send-sms-box file
 
@@ -102,7 +102,7 @@ export const MkekaTable = ({balance, userId}: { balance: number, userId: string 
             const newlySelectedPledgers = newSelectedRows.filter(
                 (row) => !updatedSelectedPledgers.some((pledger) => pledger.id === row.id)
             );
-
+            //FIX ME
             setSelectedPledgers([...updatedSelectedPledgers, ...newlySelectedPledgers]);
 
             //Reset all other states
@@ -118,7 +118,7 @@ export const MkekaTable = ({balance, userId}: { balance: number, userId: string 
                     const keysToSelect = mkekaList?.data
                         .filter((row) => row.balance > 0)
                         .map((row) => row.id) || [];
-
+                    //FIX ME
                     setSelectedRowKeys(keysToSelect);
 
                     // Select rows where balance > 0
@@ -127,6 +127,7 @@ export const MkekaTable = ({balance, userId}: { balance: number, userId: string 
                     setWadaiwa(rowsToSelect);
 
                     // Update selectedPledgers with wadaiwa
+                    //FIX ME
                     setSelectedPledgers(rowsToSelect);
 
                     // Reset other states
@@ -143,7 +144,7 @@ export const MkekaTable = ({balance, userId}: { balance: number, userId: string 
                     const keysToSelect = mkekaList?.data
                         .filter((row) => row.balance <= 0)
                         .map((row) => row.id) || [];
-
+                    //FIX ME
                     setSelectedRowKeys(keysToSelect);
 
                     // Select rows where balance <= 0
@@ -152,6 +153,7 @@ export const MkekaTable = ({balance, userId}: { balance: number, userId: string 
                     setWamalizaji(rowsToSelect);
 
                     // Update selectedPledgers with wamalizaji
+                    //FIX ME
                     setSelectedPledgers(rowsToSelect);
 
                     // Reset other states

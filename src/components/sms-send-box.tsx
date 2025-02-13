@@ -30,7 +30,7 @@ export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
 
     const showModal = () => {
         setOpenModal(true);
-
+        //FIX ME - Correct the payload issue
         sendDummySMS(messagePayload).then(async res => {
             const count = messageStats(res)
             const smsBalance = balance - count.totalMessages

@@ -26,6 +26,7 @@ export const createMessagePayload = (selectedPledgers: Pledger[]): MessagePayloa
             .replace("{deni}", currencyNumber(balance));
 
         // Combine country code and mobile to form a full phone number
+        //FIX ME - Deal with this typescript error
         const phoneNumbers: string = [`${countryCode || ""}${mobile}`];
 
         return {phoneNumbers, message};
