@@ -1,9 +1,12 @@
 import React, {useState} from 'react';
-import type {TableColumnsType} from 'antd';
-import {Table} from 'antd';
+import {Button, Col, Row, Table, TableColumnsType} from 'antd';
 import {useList} from "@refinedev/core";
 import {currencyNumber} from "../utility/currency-numbers";
+import {SMSBox} from "./sms-send-box";
 
+//TO-DO
+// Fix table row selection via the state variables
+// Update handle OK on send-sms-box file
 
 interface DataType {
     id: string;
@@ -16,15 +19,11 @@ interface DataType {
 
 const columns: TableColumnsType<DataType> = [
     {
-        title: 'First Name',
-        dataIndex: 'firstName',
-        key: "firstName"
+        title: 'Full Name',
+        key: 'fullName',
+        render: (_, record) => `${record.firstName} ${record.lastName}`,
     },
-    {
-        title: 'Last Name',
-        dataIndex: 'lastName',
-        key: "lastName"
-    },
+
     {
         title: 'Ahadi',
         dataIndex: 'amount',
@@ -45,14 +44,14 @@ const columns: TableColumnsType<DataType> = [
     },
 ];
 
-export const MkekaTable: React.FC = () => {
+export const MkekaTable = ({balance, userId}: { balance: number, userId: string }) => {
     const {data: mkekaList} = useList({
         resource: "mkeka",
         meta: {
-            select: `id,firstName,lastName,amount,paid,balance`
+            select: `id,firstName,lastName,countryCode,mobile,amount,paid,balance`
         },
         pagination: {
-            pageSize: 10,
+            pageSize: 10000,
         },
         sorters: [
             {
@@ -62,48 +61,154 @@ export const MkekaTable: React.FC = () => {
         ],
     })
 
+    const unpaidPledgers = mkekaList?.data.filter((row) => row.balance > 0) || [];
+    const paidupPledgers = mkekaList?.data.filter((row) => row.balance <= 0) || [];
+    const mkekaPledgers = mkekaList?.data.map((row) => row.id) || [];
+
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+    const [selectedPledgers, setSelectedPledgers] = useState([]);
+    const [allPledgers, setAllPledgers] = useState(mkekaPledgers)
+    const [wadaiwa, setWadaiwa] = useState(unpaidPledgers)
+    const [wamalizaji, setWamalizaji] = useState(paidupPledgers)
+
+    const isSelectedPledgersEmpty = (selectedPledgers: any[]): boolean => {
+        return selectedPledgers.length === 0;
+    };
+
+    const stateCheck = isSelectedPledgersEmpty(selectedPledgers);
+
+    const statusChecking = () => {
+        console.log("All Pledgers: ", allPledgers);
+        console.log("Selected Pledgers: ", selectedPledgers);
+        console.log("Wadaiwa: ", wadaiwa);
+        console.log("Wamalizaji: ", wamalizaji);
+    }
 
     // Row selection configuration
     const rowSelection = {
-        selectedRowKeys, // Selected rows
-        onChange: (newSelectedRowKeys: React.Key[]) => {
+        type: "checkbox",
+        columnWidth: 48,
+        selectedRowKeys, // Tracks selected row keys
+        onChange: (newSelectedRowKeys: React.Key[], newSelectedRows: DataType[]) => {
+            // Update `selectedRowKeys`
             setSelectedRowKeys(newSelectedRowKeys);
+
+            // Filter out rows that are no longer selected
+            const updatedSelectedPledgers = selectedPledgers.filter((row) =>
+                newSelectedRowKeys.includes(row.id)
+            );
+
+            // Add any newly selected rows to the state
+            const newlySelectedPledgers = newSelectedRows.filter(
+                (row) => !updatedSelectedPledgers.some((pledger) => pledger.id === row.id)
+            );
+
+            setSelectedPledgers([...updatedSelectedPledgers, ...newlySelectedPledgers]);
+
+            //Reset all other states
+            setWadaiwa([])
+            setWamalizaji([])
+
         },
         selections: [
             {
                 key: "selectRowsWithBalanceGreaterThanZero",
                 text: "Wadaiwa Ahadi",
                 onSelect: () => {
-                    // Find rows that meet the condition `balance <= 0`
                     const keysToSelect = mkekaList?.data
-                        .filter((row) => row.balance > 0) // Filter rows where balance <= 0
-                        .map((row) => row.id); // Map their IDs (or `key`) for selection
+                        .filter((row) => row.balance > 0)
+                        .map((row) => row.id) || [];
 
-                    setSelectedRowKeys(keysToSelect); // Update selected row keys
+                    setSelectedRowKeys(keysToSelect);
+
+                    // Select rows where balance > 0
+                    const rowsToSelect = mkekaList?.data.filter((row) => row.balance > 0) || [];
+
+                    setWadaiwa(rowsToSelect);
+
+                    // Update selectedPledgers with wadaiwa
+                    setSelectedPledgers(rowsToSelect);
+
+                    // Reset other states
+                    setAllPledgers([]);
+                    setWamalizaji([]);
+
+                    console.log("wadaiwa: ", rowsToSelect); // Logs selected Wadaiwa
                 },
             },
             {
                 key: "selectRowsWithBalanceZeroOrLess",
                 text: "Wamaliza Ahadi",
                 onSelect: () => {
-                    // Find rows that meet the condition `balance <= 0`
                     const keysToSelect = mkekaList?.data
-                        .filter((row) => row.balance <= 0) // Filter rows where balance <= 0
-                        .map((row) => row.id); // Map their IDs (or `key`) for selection
+                        .filter((row) => row.balance <= 0)
+                        .map((row) => row.id) || [];
 
-                    setSelectedRowKeys(keysToSelect); // Update selected row keys
+                    setSelectedRowKeys(keysToSelect);
+
+                    // Select rows where balance <= 0
+                    const rowsToSelect = mkekaList?.data.filter((row) => row.balance <= 0) || [];
+
+                    setWamalizaji(rowsToSelect);
+
+                    // Update selectedPledgers with wamalizaji
+                    setSelectedPledgers(rowsToSelect);
+
+                    // Reset other states
+                    setAllPledgers([]);
+                    setWadaiwa([]);
                 },
             },
         ],
     };
 
+    return (
+        <Row gutter={[32, 32]} style={{marginTop: "18px"}}>
+            {/* SMSBox: takes full width on mobile devices, 1/4 on large devices */}
+            <Col xs={24} sm={24} xl={6} style={{height: "100%"}}>
+                <Button type="primary" block onClick={statusChecking}>Check States</Button>
+                <SMSBox balance={balance} userId={userId} stateCheck={stateCheck} selectedPledgers={selectedPledgers}/>
+            </Col>
+            {/* MkekaTable: takes full width on mobile devices, 3/4 on large devices */}
+            <Col xs={24} sm={24} xl={18} style={{height: "100%"}}>
+                <Table<DataType>
+                    rowKey="id"
+                    virtual={true}
+                    scroll={{x: 1, y: 400}}
+                    pagination={false}
+                    rowSelection={rowSelection}
+                    columns={columns}
+                    dataSource={mkekaList?.data as DataType[] | []}
+                    size={"small"}
+                    summary={(pageData) => {
+                        let totalPledges = 0;
+                        let totalCollections = 0;
+                        let totalBalance = 0;
+                        pageData.forEach(({amount, paid, balance}) => {
+                            totalPledges += amount;
+                            totalCollections += paid;
+                            totalBalance += balance;
+                        });
+                        return (
+                            <Table.Summary fixed>
+                                <Table.Summary.Row>
+                                    <Table.Summary.Cell index={0} colSpan={2}>Grand Totals</Table.Summary.Cell>
+                                    <Table.Summary.Cell index={1}>
+                                        {currencyNumber(totalPledges)}
+                                    </Table.Summary.Cell>
+                                    <Table.Summary.Cell index={2}>
+                                        {currencyNumber(totalCollections)}
+                                    </Table.Summary.Cell>
+                                    <Table.Summary.Cell index={3}>
+                                        {currencyNumber(totalBalance)}
+                                    </Table.Summary.Cell>
+                                </Table.Summary.Row>
+                            </Table.Summary>
+                        );
+                    }}
+                />
+            </Col>
+        </Row>
+    )
 
-    return <Table<DataType>
-        rowKey="id"
-        rowSelection={rowSelection}
-        columns={columns}
-        dataSource={mkekaList?.data as DataType[] | undefined}
-        size={"small"}
-    />;
 };

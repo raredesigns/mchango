@@ -1,17 +1,74 @@
 import React, {useState} from 'react';
-import {Button, Form, Input, Space} from 'antd';
+import {Button, Form, Input, Modal, Space, Statistic, Typography} from 'antd';
 import {SendIcon} from "./icons";
-import {sendSMS} from "../utility/send-sms";
+import {sendDummySMS} from "../utility/send-sms";
 import {useNotification} from "@refinedev/core";
 import {messageStats} from "../utility/message-stats";
 import {supabaseClient} from "../utility";
+import {DotLottieReact} from "@lottiefiles/dotlottie-react";
+import {MessageIcon} from "../../public/message";
+import {AlertOutlined} from "@ant-design/icons";
+import {createMessagePayload} from "../utility/message-payload";
 
 const {TextArea} = Input
+const {Text} = Typography
 
-export const SMSBox = ({balance, userId}: { balance: number, userId: string }) => {
+export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
+    balance: number,
+    userId: string,
+    stateCheck: boolean,
+    selectedPledgers: any
+}) => {
     const {open: smsNotification} = useNotification();
     const [form] = Form.useForm();
     const typedMessage = Form.useWatch('message-input', form);
+
+    const [openModal, setOpenModal] = useState(false);
+    const [confirmModalLoading, setConfirmModalLoading] = useState(false);
+    const [messageCount, setMessageCount] = useState<number>(0)
+    const [messageBalance, setMessageBalance] = useState<number>(0)
+
+    const showModal = () => {
+        setOpenModal(true);
+
+        sendDummySMS(messagePayload).then(async res => {
+            const count = messageStats(res)
+            const smsBalance = balance - count.totalMessages
+            setMessageCount(count.totalMessages)
+            setMessageBalance(smsBalance)
+        })
+    };
+
+    const handleOk = () => {
+        setConfirmModalLoading(true);
+
+        setTimeout(async () => {
+            sendDummySMS(messagePayload).then(async res => {
+                const count = messageStats(res)
+                const smsBalance = balance - count.totalMessages
+
+                //Update database with new sms amounts
+                await supabaseClient
+                    .from('profiles')
+                    .update({"smsBalance": smsBalance})
+                    .eq('id', userId)
+                    .select()
+
+                smsNotification?.({
+                    type: "success",
+                    message: `Successfully sent ${count.totalMessages} SMS`,
+                    undoableTimeout: 5,
+                });
+
+                setOpenModal(false);
+                setConfirmModalLoading(false);
+            })
+        }, 2000);
+    };
+
+    const handleCancel = () => {
+        setOpenModal(false);
+    };
 
     const [text, setText] = useState(""); // State for the text area content
     const [tags] = useState(['{firstName}', '{lastName}', '{ahadi}', '{deni}']); // List of placeholder tags
@@ -48,39 +105,24 @@ export const SMSBox = ({balance, userId}: { balance: number, userId: string }) =
         }
 
     };
-    const messagePayload = {
+
+    const messagePayloads = {
         phoneNumbers: ["+255610459965", "+255712459962", "+255689454965"],
         message: "Hey there! Just wanted to check in and see how things are going with the project. Hope everything's moving along smoothly on your end. If you need any help or want to go over anything, feel free to reach out! Looking forward to catching up soon.\nHey there! Just wanted to check in and see how things are going with the project. Hope everything's moving along smoothly on your end. If you need any help or want to go over anything, feel free to reach out! Looking forward to catching up soon"
     }
 
-    const handleSubmit = () => {
-        sendSMS(messagePayload).then(async res => {
-            const count = messageStats(res)
-            const smsBalance = balance - count.totalMessages
-
-            //Update database with new sms amounts
-            await supabaseClient
-                .from('profiles')
-                .update({"smsBalance": smsBalance})
-                .eq('id', userId)
-                .select()
-
-            smsNotification?.({
-                type: "success",
-                message: `Successfully sent ${count.totalMessages} SMS`,
-                undoableTimeout: 5,
-            });
-        })
-    }
+    const messagePayload = createMessagePayload(selectedPledgers);
+    console.log(messagePayload)
 
     return (
+        <>
         <Form
             layout="vertical"
             form={form}
-            onFinish={handleSubmit}
+            onFinish={showModal}
         >
             <Form.Item label="Message Preview">
-                <TextArea rows={5} value={typedMessage}/>
+                <TextArea rows={5} value={typedMessage} readOnly/>
             </Form.Item>
             <Form.Item name="message-input">
                 <TextArea
@@ -102,8 +144,50 @@ export const SMSBox = ({balance, userId}: { balance: number, userId: string }) =
             </Form.Item>
 
             <Form.Item>
-                <Button type="primary" icon={<SendIcon/>} htmlType="submit">Send SMS</Button>
+                <Button type="primary" icon={<SendIcon/>} htmlType="submit" disabled={stateCheck}>Send SMS</Button>
             </Form.Item>
         </Form>
+            <Modal
+                title=""
+                open={openModal}
+                onOk={handleOk}
+                confirmLoading={confirmModalLoading}
+                onCancel={handleCancel}
+                okText="Confirm Send"
+                okButtonProps={{disabled: messageCount > balance}}
+                footer={[
+                    <Button
+                        key="link"
+                        type="primary"
+                        onClick={() => {
+                            ""
+                        }}
+                        hidden={messageCount < balance}
+                    >
+                        Purchase More SMS
+                    </Button>,
+                    <Button
+                        key="submit"
+                        type="primary"
+                        loading={confirmModalLoading}
+                        onClick={handleOk}
+                        hidden={messageCount > balance}
+                    >
+                        Confirm Send
+                    </Button>,
+                ]}
+            >
+                <Statistic title={`You are about to send`} value={messageCount} prefix={<MessageIcon/>}
+                           suffix={messageCount === 1 ? "Message" : " Messages"}/>
+                <Text style={{fontSize: "small", color: "orangered", fontStyle: "italic"}}
+                      hidden={messageCount < balance}><AlertOutlined style={{color: "orangered"}}/> Insufficient SMS
+                    Balance to send more messages</Text>
+                <DotLottieReact
+                    src="https://lottie.host/c1bef571-8c0e-43e5-9afc-376eef6b5535/MmbtZYxEUu.lottie"
+                    loop
+                    autoplay
+                />
+            </Modal>
+        </>
     );
 };

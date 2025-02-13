@@ -2,8 +2,6 @@ import {Card, Col, Row} from "antd";
 import CountUp from "react-countup";
 import {useGetIdentity, useList} from "@refinedev/core";
 import {MkekaTable} from "../../components/table";
-import {SMSBox} from "../../components/sms-send-box";
-
 
 export const Messaging = () => {
     //Get user's SMS Balance
@@ -28,16 +26,7 @@ export const Messaging = () => {
                 </Card>
           </Col>
         </Row>
-          <Row gutter={[32, 32]} style={{marginTop: "18px"}}>
-              {/* SMSBox: takes full width on mobile devices, 1/4 on large devices */}
-              <Col xs={24} sm={24} xl={6} style={{height: "100%"}}>
-                  <SMSBox balance={balance} userId={userId}/>
-              </Col>
-              {/* MkekaTable: takes full width on mobile devices, 3/4 on large devices */}
-              <Col xs={24} sm={24} xl={18} style={{height: "100%"}}>
-                  <MkekaTable/>
-              </Col>
-          </Row>
+          <MkekaTable balance={balance} userId={userId}/>
       </div>
     );
   };
