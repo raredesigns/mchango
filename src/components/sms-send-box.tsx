@@ -6,12 +6,13 @@ import {useNotification} from "@refinedev/core";
 import {messageStats} from "../utility/message-stats";
 import {supabaseClient} from "../utility";
 import {DotLottieReact} from "@lottiefiles/dotlottie-react";
-import {MessageIcon} from "../../public/message";
+import {MessageIcon} from "../components/icons";
 import {AlertOutlined} from "@ant-design/icons";
 import {createMessagePayload} from "../utility/message-payload";
+import { messageTemplates } from '../constants';
 
 const {TextArea} = Input
-const {Text} = Typography
+const {Text, Paragraph} = Typography
 
 export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
     balance: number,
@@ -21,98 +22,104 @@ export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
 }) => {
     const {open: smsNotification} = useNotification();
     const [form] = Form.useForm();
-    const typedMessage = Form.useWatch('message-input', form);
+    // const typedMessage = Form.useWatch('message-input', form);
+    const [messagePreview, setMessagePreview] = useState("");
 
     const [openModal, setOpenModal] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [confirmModalLoading, setConfirmModalLoading] = useState(false);
     const [messageCount, setMessageCount] = useState<number>(0)
     const [messageBalance, setMessageBalance] = useState<number>(0)
 
-    const showModal = () => {
+    const messagePayload = createMessagePayload(selectedPledgers);
+    const previewMessage = messagePayload[0]?.message
+    console.log(previewMessage)
+
+    const showModal = async () => {
+        setIsLoading(true)
+
+        // Initialize counters for total messages sent and overall cost
+        let totalSentSMS = 0;
+        let overallTotalCost = 0;
+    
+        // Use map to collect promises of asynchronous operations
+        const sendSMSPromises = messagePayload.map(async (sms) => {
+            const { phoneNumbers, message } = sms;
+    
+            // Send the SMS and get the response
+            const response = await sendDummySMS({ phoneNumbers, message });
+    
+            // Calculate stats for this batch of messages and update counters
+            const { totalMessages, totalCost } = messageStats(response);
+            totalSentSMS += totalMessages;
+            overallTotalCost += totalCost;
+        });
+    
+        // Wait for all promises to resolve
+        await Promise.all(sendSMSPromises);
+    
+        // Calculate remaining balance after sending the SMS
+        const smsBalance = balance - totalSentSMS;
+    
+        // Update state once after all calculations
+        setIsLoading(false)
+        setMessageCount(totalSentSMS);
+        setMessageBalance(smsBalance);
         setOpenModal(true);
-        //FIX ME - Correct the payload issue
-        sendDummySMS(messagePayload).then(async res => {
-            const count = messageStats(res)
-            const smsBalance = balance - count.totalMessages
-            setMessageCount(count.totalMessages)
-            setMessageBalance(smsBalance)
-        })
     };
 
-    const handleOk = () => {
+    const handleOk = async () => {
         setConfirmModalLoading(true);
 
-        setTimeout(async () => {
-            sendDummySMS(messagePayload).then(async res => {
-                const count = messageStats(res)
-                const smsBalance = balance - count.totalMessages
+        // Initialize counters for total messages sent and overall cost
+        let totalSentSMS = 0;
+        let overallTotalCost = 0;
+    
+        // Use map to collect promises of asynchronous operations
+        const sendSMSPromises = messagePayload.map(async (sms) => {
+            const { phoneNumbers, message } = sms;
+    
+            // Send the SMS and get the response
+            // TO DO - Update DUMMY Func when going live
+            const response = await sendDummySMS({ phoneNumbers, message });
+    
+            // Calculate stats for this batch of messages and update counters
+            const { totalMessages, totalCost } = messageStats(response);
+            totalSentSMS += totalMessages;
+            overallTotalCost += totalCost;
+        });
+    
+        // Wait for all promises to resolve
+        await Promise.all(sendSMSPromises);
+    
+        // Calculate remaining balance after sending the SMS
+        const smsBalance = balance - totalSentSMS;
 
-                //Update database with new sms amounts
-                await supabaseClient
-                    .from('profiles')
-                    .update({"smsBalance": smsBalance})
-                    .eq('id', userId)
-                    .select()
+        //Update database with new sms amounts
+        await supabaseClient
+            .from('profiles')
+            .update({"smsBalance": smsBalance})
+            .eq('id', userId)
+            .select()
 
-                smsNotification?.({
-                    type: "success",
-                    message: `Successfully sent ${count.totalMessages} SMS`,
-                    undoableTimeout: 5,
-                });
+        smsNotification?.({
+            type: "success",
+            message: `Successfully sent ${totalSentSMS} SMS`,
+            undoableTimeout: 5,
+        });
 
-                setOpenModal(false);
-                setConfirmModalLoading(false);
-            })
-        }, 2000);
+        setOpenModal(false);
+        setConfirmModalLoading(false);
     };
 
     const handleCancel = () => {
         setOpenModal(false);
     };
 
-    const [text, setText] = useState(""); // State for the text area content
-    const [tags] = useState(['{firstName}', '{lastName}', '{ahadi}', '{deni}']); // List of placeholder tags
-
-    // Function to handle text insertion
-    const insertTag = (tag: string) => {
-        const textarea = document.getElementById('message-input-area') as HTMLTextAreaElement;
-
-        if (textarea) {
-            const cursorStart = textarea.selectionStart; // Get the current cursor start position
-            const cursorEnd = textarea.selectionEnd; // Get the current cursor end position
-
-            // Insert the tag at the cursor position
-            const updatedText =
-                text.slice(0, cursorStart) + // Text before the cursor
-                tag +                       // The inserted tag
-                text.slice(cursorEnd);      // Text after the cursor
-
-            setText(updatedText);
-
-            // Update the position of the cursor after the inserted tag
-            // setTimeout(() => {
-            //   const newCursorPosition = cursorStart + tag.length;
-            //   textarea.setSelectionRange(newCursorPosition, newCursorPosition);
-            //   textarea.focus();
-            // }, 0);
-            // Set the cursor position after the inserted tag
-            setTimeout(() => {
-                textarea.setSelectionRange(cursorStart + tag.length, cursorStart + tag.length);
-                textarea.focus();
-                console.log(text)
-            }, 0);
-
-        }
-
+    const insertText = (text: string) => {
+        setMessagePreview(messagePayload[0]?.message);  // Update state, which updates the input value
+        console.log(text)
     };
-
-    const messagePayloads = {
-        phoneNumbers: ["+255610459965", "+255712459962", "+255689454965"],
-        message: "Hey there! Just wanted to check in and see how things are going with the project. Hope everything's moving along smoothly on your end. If you need any help or want to go over anything, feel free to reach out! Looking forward to catching up soon.\nHey there! Just wanted to check in and see how things are going with the project. Hope everything's moving along smoothly on your end. If you need any help or want to go over anything, feel free to reach out! Looking forward to catching up soon"
-    }
-
-    const messagePayload = createMessagePayload(selectedPledgers);
-    console.log(messagePayload)
 
     return (
         <>
@@ -121,30 +128,34 @@ export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
             form={form}
             onFinish={showModal}
         >
-            <Form.Item label="Message Preview">
-                <TextArea rows={5} value={typedMessage} readOnly/>
+            <Form.Item label="">
+                <Paragraph>
+                    <blockquote>Message Preview</blockquote>
+                    <pre hidden={stateCheck ? true : false}>{previewMessage}</pre>
+                </Paragraph>
             </Form.Item>
-            <Form.Item name="message-input">
+            <Form.Item name="message-input" hidden>
                 <TextArea
                     id="message-input-area"
                     rows={6}
                     placeholder="Write your message"
-                    // value={text}
-                    onChange={(e) => setText(e.target.value)}
+                    value={messagePreview}
+                    onChange={(e) => setMessagePreview(e.target.value)}  // Update the state when the user types
                 />
             </Form.Item>
-            <Form.Item>
+            <Form.Item hidden>
                 <Space wrap>
-                    {tags.map((tag) => (
-                        <Button key={tag} size="small" variant="dashed" onClick={() => insertTag(tag)}>
-                            {tag}
+                    <p>Message Templates</p>
+                    {messageTemplates.map((template) => (
+                        <Button key={template.label} size="small" variant="dashed" onClick={() => insertText(template.value)}>
+                            {template.label}
                         </Button>
                     ))}
                 </Space>
             </Form.Item>
 
             <Form.Item>
-                <Button type="primary" icon={<SendIcon/>} htmlType="submit" disabled={stateCheck}>Send SMS</Button>
+                <Button type="primary" icon={<SendIcon/>} htmlType="submit" loading={isLoading} disabled={stateCheck}>{isLoading ? 'Calculating SMS': 'Send SMS'}</Button>
             </Form.Item>
         </Form>
             <Modal

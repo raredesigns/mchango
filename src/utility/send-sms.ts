@@ -3,8 +3,7 @@ interface Props {
     message: string
 }
 
-export const sendSMS = async ({phoneNumbers, message}: Props) => {
-    // const phoneNumbersStr = phoneNumbers.join(",");
+export const sendSMS = async ({phoneNumbers,message}:Props) => {
 
     const payload = new URLSearchParams({
         username: import.meta.env.VITE_AT_USERNAME,
@@ -35,9 +34,7 @@ export const sendSMS = async ({phoneNumbers, message}: Props) => {
     }
 };
 
-export const sendDummySMS = async ({phoneNumbers, message}: Props) => {
-    console.log(phoneNumbers)
-    // const phoneNumbersStr = phoneNumbers.length > 1 ? phoneNumbers.join(",") : phoneNumbers[0];
+export const sendDummySMS = async ({phoneNumbers,message}:Props) => {
 
     const payload = new URLSearchParams({
         username: import.meta.env.VITE_AT_DUMMY_USERNAME,

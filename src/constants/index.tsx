@@ -20,3 +20,20 @@ export const countryCodes = [
     country: "Uganda",
   },
 ];
+
+export const costPerMessage = 35
+
+export const messageTemplates = [
+  {
+    label: "Unfinished Pledges",
+    value: `Habari {firstName},\n Asante kwa ahadi yako ya {ahadi}. Tunapenda kukukumbusha kumalizia ahadi yako iliyobakia ya {deni}.`
+  },
+  {
+    label: "Finished Pledges",
+    value: `Habari {firstName},\n Asante kwa kumaliza kulipia ahadi yako ya {ahadi}.` 
+  },
+  {
+    label: "Generic",
+    value: `Habari {firstName},\n Asante kwa ahadi yako ya {ahadi}.`
+  }
+]

@@ -168,7 +168,6 @@ export const MkekaTable = ({balance, userId}: { balance: number, userId: string 
         <Row gutter={[32, 32]} style={{marginTop: "18px"}}>
             {/* SMSBox: takes full width on mobile devices, 1/4 on large devices */}
             <Col xs={24} sm={24} xl={6} style={{height: "100%"}}>
-                <Button type="primary" block onClick={statusChecking}>Check States</Button>
                 <SMSBox balance={balance} userId={userId} stateCheck={stateCheck} selectedPledgers={selectedPledgers}/>
             </Col>
             {/* MkekaTable: takes full width on mobile devices, 3/4 on large devices */}

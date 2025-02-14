@@ -1,3 +1,4 @@
+import { messageTemplates } from "../constants";
 import {currencyNumber} from "./currency-numbers";
 
 type Pledger = {
@@ -14,7 +15,7 @@ type Pledger = {
 type MessagePayload = { phoneNumbers: string; message: string }[];
 
 export const createMessagePayload = (selectedPledgers: Pledger[]): MessagePayload => {
-    const template = "Hi {firstName}, thank you for your pledge of {ahadi}. Your balance is {deni}.";
+    const template = messageTemplates[2].value
 
     return selectedPledgers.map((pledger) => {
         const {firstName, countryCode, mobile, amount, balance} = pledger;
