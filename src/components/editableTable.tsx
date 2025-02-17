@@ -5,7 +5,9 @@ import {
   useEditableTable,
   SaveButton,
   TextField,
-  FilterDropdown,useForm
+  FilterDropdown,useForm,
+  useModalForm,
+  Edit
 } from "@refinedev/antd";
 import {
   List,
@@ -33,36 +35,37 @@ import { Text } from "./text";
 import { formatMobile } from "../utility/format-mobile";
 import { useState } from "react";
 import { countryCodes } from "../constants";
-import { useCreate, useGo, useSelect } from "@refinedev/core";
+import { useCreate, useGo, useList, useSelect } from "@refinedev/core";
 import { toProperCase } from "../utility/propercase";
+import { MkekaModal } from "./mkeka-modal";
 
 interface PlotsEditableTableProps {
   initialFilterValue: string;
+  mkekaMessage: any,
+  messageHeader: any
 }
-
-const items: MenuProps["items"] = [
-  {
-    key: "1",
-    label: (
-      <Button type="link" color="default" variant="link">Ongeza Mkeka</Button>
-    ),
-  },
-  {
-    key: "2",
-    label: (
-      <Button type="link" color="default" variant="link">Share Mkeka</Button>
-    ),
-  },
-];
 
 const PlotsEditableTable = ({
   children,
+  initialFilterValue,
+  mkekaMessage,
+  messageHeader
 }: React.PropsWithChildren<PlotsEditableTableProps>) => {
   const go = useGo()
 
   const [openAhadi, setOpenAhadi] = useState(false);
   const [openMchango, setOpenMchango] = useState(false);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [openMkekaShareModal, setOpenMkekaShareModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false)
+
+  const { modalProps, id, close, show } = useModalForm({
+    action: "edit",
+  });
+
+  const showEditingModal = () => {
+    setShowEditModal(true);
+  };
 
   const showAhadiModal = () => {
     setOpenAhadi(true);
@@ -71,6 +74,29 @@ const PlotsEditableTable = ({
   const showMchangoModal = () => {
     setOpenMchango(true);
   };
+
+  const showShareMkekaModal = () => {
+    setOpenMkekaShareModal(true);
+  };
+
+  const closeShareMkekaModal = () => {
+    setOpenMkekaShareModal(false);
+  };  
+
+  const items: MenuProps["items"] = [
+    // {
+    //   key: "1",
+    //   label: (
+    //     <Button type="link" color="default" variant="link">Ongeza Mkeka</Button>
+    //   ),
+    // },
+    {
+      key: "2",
+      label: (
+        <Button type="link" color="default" variant="link" onClick={showShareMkekaModal}>Share Mkeka</Button>
+      ),
+    },
+  ];
 
   const { form: ahadiForm, formProps: ahadiFormProps } = useForm({
     action: "create",
@@ -93,8 +119,8 @@ const PlotsEditableTable = ({
     optionValue: "mobile",
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any  
-  const handleAhadiSubmit = async (values: any) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleAhadiSubmit = (values: any) => {
     setConfirmLoading(true);
 
     addAhadi({
@@ -105,9 +131,9 @@ const PlotsEditableTable = ({
         countryCode: values.countryCode,
         mobile: values.mobile,
         pledge: values.pledge,
+        relatedEvent: initialFilterValue
       },
       successNotification: (data) => {
-        console.log(data)
         return {
           message: `Pledge of ${currencyNumber(data?.data.pledge)} from ${data?.data.firstName} added!`,
           description: "Success",
@@ -115,20 +141,17 @@ const PlotsEditableTable = ({
         };
       },
     });
-  
+
+    ahadiForm.resetFields();
+
     setTimeout(() => {
       setOpenAhadi(false);
-      ahadiForm.resetFields();
       setConfirmLoading(false);
-      go({
-        to: "/",
-        type: "push"
-      })
     }, 2000);
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleMchangoSubmit = async (values: any) => {
+  const handleMchangoSubmit = (values: any) => {
     setConfirmLoading(true);
     addMchango({
       resource: "collections",
@@ -136,6 +159,7 @@ const PlotsEditableTable = ({
         date: values.date,
         mobile: values.mobile,
         amount: values.amount,
+        relatedEvent: initialFilterValue
       },
       successNotification: (data) => {
         return {
@@ -146,14 +170,11 @@ const PlotsEditableTable = ({
       },
     });
 
+    mchangoForm.resetFields();
+
     setTimeout(() => {
       setOpenMchango(false);
-      mchangoForm.resetFields();
       setConfirmLoading(false);
-      go({
-        to: "/",
-        type: "push"
-      })
     }, 2000);
   };
 
@@ -199,6 +220,15 @@ const PlotsEditableTable = ({
     pagination: {
       pageSize: 10,
     },
+    filters: {
+      permanent: [
+        {
+          field: "relatedEvent",
+          operator: "eq",
+          value: initialFilterValue
+        },
+      ],
+    },
     meta: {
       select: `id,
                 firstName,
@@ -206,7 +236,8 @@ const PlotsEditableTable = ({
                 mobile,
                 amount,
                 paid,
-                balance`,
+                balance,
+                relatedEvent`,
     },
   });
 
@@ -348,14 +379,15 @@ const PlotsEditableTable = ({
                   return (
                     <Space.Compact>
                       <EditButton
-                        {...editButtonProps(record.id)}
+                        // {...editButtonProps(record.id)}
+                        onClick={showEditingModal}
                         hideText
                         icon={<EditIcon />}
                         size="small"
                       />
                       <DeleteButton
                         recordItemId={record.id}
-                        resource="plots"
+                        resource="pledgers"
                         confirmTitle="Are you sure to delete this pledge?"
                         confirmOkText="Yes, I'm Sure"
                         confirmCancelText="No, Cancel"
@@ -543,6 +575,117 @@ const PlotsEditableTable = ({
           </Form>
         </Spin>
       </Modal>
+
+      <Modal
+        title="Edit Pledger"
+        open={showEditModal}
+        footer={false}
+        // onCancel={handleAhadiCancel}
+        {...modalProps}
+        onClose={close}
+      >
+        <Edit recordItemId={id} resource="pledgers">
+          <Spin spinning={confirmLoading}>
+            <Form
+              // {...ahadiFormProps}
+              layout="vertical"
+              onFinish={handleAhadiSubmit}
+              form={ahadiForm}
+            >
+              <Divider />
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="firstName"
+                    label="Jina la Kwanza"
+                    rules={[{ required: true, message: "Tafadhali weka jina" }]}
+                  >
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="lastName"
+                    label="Jina la Ukoo"
+                    rules={[
+                      { required: false, message: "Tafadhali weka jina la ukoo" },
+                    ]}
+                  >
+                    <Input />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="countryCode"
+                    label="Nchi"
+                    rules={[{ required: true, message: "Chagua nchi" }]}
+                  >
+                    <Select
+                      placeholder="Country Code"
+                      options={countryCodes}
+                      optionRender={(option) => (
+                        <Space>
+                          {option.data.flag}
+                          {option.data.country}
+                          <span style={{ fontSize: 11 }}>{option.data.value}</span>
+                        </Space>
+                      )}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="mobile"
+                    label="Namba ya Simu"
+                    rules={[{ required: true, message: "Namba ya Simu" }]}
+                  >
+                    <InputNumber style={{ width: "100%" }} />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={16}>
+                  <Form.Item
+                    name="pledge"
+                    label="Kiasi Cha Ahadi"
+                    rules={[{ required: true, message: "Tafadhali weka Ahadi" }]}
+                  >
+                    <InputNumber
+                      addonBefore="Tshs."
+                      formatter={(value) =>
+                        `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                      }
+                      parser={(value) =>
+                        value?.replace(/\$\s?|(,*)/g, "") as unknown as number
+                      }
+                      style={{ width: "152%" }}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Space direction="horizontal" style={{ marginTop: 8 }}>
+                <Form.Item>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                  >
+                    Save
+                  </Button>
+                </Form.Item>
+              </Space>
+            </Form>
+          </Spin>
+        </Edit>
+      </Modal>
+
+      <MkekaModal 
+        sharedMkekaText={mkekaMessage}
+        messageHeader={messageHeader}
+        isVisible={openMkekaShareModal}
+        closeModal={closeShareMkekaModal}
+      />
     </>
   );
 };

@@ -33,7 +33,11 @@ export const messageTemplates = [
     value: `Habari {firstName},\n Asante kwa kumaliza kulipia ahadi yako ya {ahadi}.` 
   },
   {
-    label: "Generic",
-    value: `Habari {firstName},\n Asante kwa ahadi yako ya {ahadi}.`
+    label: "SMS 1",
+    value: `Habari {firstName},\nKamati ya {eventType} ya ndugu na rafiki yetu, {groomBride} itakayofanyika tarehe {eventDate} inapenda kukukumbusha kumalizia au kupunguza mchango wako wa {deni}.\nWewe ni wa muhimu katika kufanikisha shughuli hii. Mungu akubariki.\n{mobile}: {mobileNumber} - {mobileName}\n{bank}: {bankAccount} - {bankName}.\nAhsante sana.`
+  },
+  {
+    label:"SMS 2",
+    value: `Habari {firstName},\nKamati ya {eventType} ya ndugu na rafiki yetu, {groomBride} itakayofanyika tarehe {eventDate} inapenda kukukumbusha kumalizia au kupunguza mchango wako wa {deni}.\nTumebaki na siku {daysToEvent} tu mpaka siku ya {eventType}.\nWewe ni wa muhimu katika kufanikisha shughuli hii. Mungu akubariki.\n{mobile}: {mobileNumber} - {mobileName}\n{bank}: {bankAccount} - {bankName}.\nAhsante sana.`
   }
 ]

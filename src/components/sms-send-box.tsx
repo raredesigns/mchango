@@ -7,18 +7,19 @@ import {messageStats} from "../utility/message-stats";
 import {supabaseClient} from "../utility";
 import {DotLottieReact} from "@lottiefiles/dotlottie-react";
 import {MessageIcon} from "../components/icons";
-import {AlertOutlined} from "@ant-design/icons";
+import {AlertOutlined, HighlightOutlined} from "@ant-design/icons";
 import {createMessagePayload} from "../utility/message-payload";
 import { messageTemplates } from '../constants';
 
 const {TextArea} = Input
 const {Text, Paragraph} = Typography
 
-export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
+export const SMSBox = ({balance, userId, stateCheck, selectedPledgers, events}: {
     balance: number,
     userId: string,
     stateCheck: boolean,
     selectedPledgers: any
+    events: any
 }) => {
     const {open: smsNotification} = useNotification();
     const [form] = Form.useForm();
@@ -31,39 +32,49 @@ export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
     const [messageCount, setMessageCount] = useState<number>(0)
     const [messageBalance, setMessageBalance] = useState<number>(0)
 
-    const messagePayload = createMessagePayload(selectedPledgers);
+    const messagePayload = createMessagePayload(selectedPledgers, events);
     const previewMessage = messagePayload[0]?.message
-    console.log(previewMessage)
 
     const showModal = async () => {
         setIsLoading(true)
-
-        // Initialize counters for total messages sent and overall cost
-        let totalSentSMS = 0;
-        let overallTotalCost = 0;
-    
-        // Use map to collect promises of asynchronous operations
+        
         const sendSMSPromises = messagePayload.map(async (sms) => {
             const { phoneNumbers, message } = sms;
-    
+        
             // Send the SMS and get the response
             const response = await sendDummySMS({ phoneNumbers, message });
-    
-            // Calculate stats for this batch of messages and update counters
-            const { totalMessages, totalCost } = messageStats(response);
-            totalSentSMS += totalMessages;
-            overallTotalCost += totalCost;
-        });
-    
+        
+            // Calculate stats for this batch of messages
+            const stats = messageStats(response);
+            
+            // Ensure the returned stats are numbers
+            if (isNaN(stats.totalMessages) || isNaN(stats.totalCost)) {
+                console.error('Invalid stats:', stats);
+                return { totalMessages: 0, totalCost: 0 };  // Return default values if invalid
+            }
+        
+            return stats;
+        });        
+        
         // Wait for all promises to resolve
-        await Promise.all(sendSMSPromises);
-    
+        const statsArray = await Promise.all(sendSMSPromises);
+
+        // Sum up the total messages and cost after all promises have resolved
+        const { totalMessages, totalCost } = statsArray.reduce(
+            (acc, stats) => {
+                acc.totalMessages += Number(stats.totalMessages);
+                acc.totalCost += Number(stats.totalCost);
+                return acc;
+            },
+            { totalMessages: 0, totalCost: 0 }
+        );   
+
         // Calculate remaining balance after sending the SMS
-        const smsBalance = balance - totalSentSMS;
-    
+        const smsBalance = balance - totalMessages;
+
         // Update state once after all calculations
         setIsLoading(false)
-        setMessageCount(totalSentSMS);
+        setMessageCount(totalMessages);
         setMessageBalance(smsBalance);
         setOpenModal(true);
     };
@@ -116,11 +127,6 @@ export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
         setOpenModal(false);
     };
 
-    const insertText = (text: string) => {
-        setMessagePreview(messagePayload[0]?.message);  // Update state, which updates the input value
-        console.log(text)
-    };
-
     return (
         <>
         <Form
@@ -129,7 +135,13 @@ export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
             onFinish={showModal}
         >
             <Form.Item label="">
-                <Paragraph>
+                <Paragraph 
+                    // editable={{
+                    //     icon: <HighlightOutlined />,
+                    //     autoSize: true,
+                    //     text: previewMessage
+                    // }}
+                >
                     <blockquote>Message Preview</blockquote>
                     <pre hidden={stateCheck ? true : false}>{previewMessage}</pre>
                 </Paragraph>
@@ -147,7 +159,7 @@ export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
                 <Space wrap>
                     <p>Message Templates</p>
                     {messageTemplates.map((template) => (
-                        <Button key={template.label} size="small" variant="dashed" onClick={() => insertText(template.value)}>
+                        <Button key={template.label} size="small" variant="dashed" onClick={() => {}}>
                             {template.label}
                         </Button>
                     ))}
@@ -184,7 +196,7 @@ export const SMSBox = ({balance, userId, stateCheck, selectedPledgers}: {
                         onClick={handleOk}
                         hidden={messageCount > balance}
                     >
-                        Confirm Send
+                        {confirmModalLoading ? 'Sending SMS' : 'Confirm Send'}
                     </Button>,
                 ]}
             >
