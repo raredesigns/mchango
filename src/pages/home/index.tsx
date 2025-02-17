@@ -3,11 +3,12 @@ import DataCard from "../../components/card";
 import PlotsEditableTable from "../../components/editableTable";
 import {useList, useOne, useTable} from "@refinedev/core";
 import { mkekaTextMessage } from "../../utility/mkeka-message";
+import OnboardingModalWizard from "../../components/onboarding/onboarding";
 
 export const Home = () => {  
 
   //Get user's current event and all their related events Data
-  const {data: currentEvent} = useList({
+  const {data: currentEvent, refetch: refetchCurrentEvent } = useList({
     resource: "profiles",
     meta: {
         select: `currentEvent,events!events_addedBy_fkey(id,budgetAmount)`,
@@ -21,8 +22,9 @@ export const Home = () => {
     id: currentEventId
   })  
 
-  const { data: pledges, isLoading: pledgesLoading } = useList({
+  const { data: pledges, isLoading: pledgesLoading, refetch: refetchPledgeSummary } = useList({
     resource: "pledges_summary",
+    liveMode: "auto",
     meta: {
       select: `totalamount`,
     },
@@ -35,8 +37,9 @@ export const Home = () => {
     ]    
   });
 
-  const { data: collections, isLoading: collectionLoading } = useList({
+  const { data: collections, isLoading: collectionLoading, refetch: refetchCollectionSummary } = useList({
     resource: "collections_summary",
+    liveMode: "auto",
     meta: {
       select: `totalamount`,
     },
@@ -51,6 +54,7 @@ export const Home = () => {
 
   const {data: mkeka} = useList({
     resource: "mkeka",
+    liveMode: "auto",
     meta: {
       select: `*`
     },
@@ -116,7 +120,6 @@ export const Home = () => {
               <DataCard
                   title="Ahadi Zilizolipwa"
                   description="Jumla ya Ahadi Zilizolipwa"
-                  // amount={currencyNumber(totalCollections)}
                   amount={totalCollections}
               />
             </Space>
@@ -138,10 +141,13 @@ export const Home = () => {
         initialFilterValue={currentEventId} 
         mkekaMessage={mkekaMessage}
         messageHeader={messageHeader}
+        refetchCollectionSummary={refetchCollectionSummary}
+        refetchPledgeSummary={refetchPledgeSummary}
       />
       {/* <Row gutter={[32, 32]} style={{ marginTop: "32px" }}>
         <Col xs={24} sm={24} xl={24} style={{ height: "100%" }}></Col>
       </Row> */}
+      <OnboardingModalWizard/>
     </div>
   );
 };
