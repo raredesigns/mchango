@@ -80,7 +80,7 @@ function App() {
                               Sider={(props) => <ThemedSiderV2 {...props} fixed />}
                             >
                               <Outlet />
-                            </ThemedLayoutV2>
+                            </ThemedLayoutV2><OnboardingModalWizard/>
                           </Authenticated>
                         }
                       >

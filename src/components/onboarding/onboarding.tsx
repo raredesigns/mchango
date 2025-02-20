@@ -8,10 +8,7 @@ import { supabaseClient } from '../../utility/supabaseClient';
 
 const OnboardingModalWizard: React.FC = () => {
   const {data: identity} = useGetIdentity();
-  // const userId = "3ccba219-6ca0-4587-adee-16752b7452f4"
-  // const onboardingCheck = true
-
-  const userId = (identity as {id: string}).id
+  const userId = (identity as {id: string})?.id
   const {data: onboardingCheck } = useOne({
     resource: "profiles",
     id: userId,
@@ -85,7 +82,7 @@ const OnboardingModalWizard: React.FC = () => {
 
   return (
     <>
-        <Modal open={!onboardingCheck} footer={null} closable={false} width="100%">
+        <Modal open={!onboardingCheck?.data.onBoarding} footer={null} closable={false} width="100%">
             <Steps current={current} items={items} />
             <div style={contentStyle}>{steps[current].content}</div>
             <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end" }}>

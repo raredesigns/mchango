@@ -1,7 +1,7 @@
 import {Col, Progress, Row, Space} from "antd";
 import DataCard from "../../components/card";
 import PlotsEditableTable from "../../components/editableTable";
-import {useList, useOne, useTable} from "@refinedev/core";
+import {useGetIdentity, useList, useOne, useTable} from "@refinedev/core";
 import { mkekaTextMessage } from "../../utility/mkeka-message";
 import OnboardingModalWizard from "../../components/onboarding/onboarding";
 
@@ -146,8 +146,7 @@ export const Home = () => {
       />
       {/* <Row gutter={[32, 32]} style={{ marginTop: "32px" }}>
         <Col xs={24} sm={24} xl={24} style={{ height: "100%" }}></Col>
-      </Row> */}
-      <OnboardingModalWizard/>
+      </Row> */}      
     </div>
   );
 };

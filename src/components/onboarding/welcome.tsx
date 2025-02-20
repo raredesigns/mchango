@@ -1,23 +1,23 @@
-import { Row, Col, Image, Divider, Form, Input, InputNumber, Select, Space, theme } from "antd"
+import { Row, Col, Image, Divider, Form, Input, InputNumber, Select, Space, theme, Typography } from "antd"
 import { countryCodes } from "../../constants"
 import { DotLottieReact } from "@lottiefiles/dotlottie-react"
-import { Edit } from "@refinedev/antd"
+import { Edit} from "@refinedev/antd"
 
 type Props = {
    formProps: any,
    saveButtonProps: any
 }
 
+const {Title, Paragraph} = Typography
+const { token } = theme.useToken();
+
 export const Welcome = ({formProps, saveButtonProps}: Props) => {
 
  return (
          <Row gutter={[32, 32]} style={{ marginTop: "32px"}}>
             <Col xs={24} sm={24} xl={16} style={{ height: "100%" }}>
-               <DotLottieReact
-                  src="https://lottie.host/c1bef571-8c0e-43e5-9afc-376eef6b5535/MmbtZYxEUu.lottie"
-                  loop
-                  autoplay
-               /><Image src="https://cdn.dribbble.com/users/1418633/screenshots/5400267/hilady_dribbble_studiotale.gif"/>
+               <Image src="https://cdn.dribbble.com/users/1418633/screenshots/5400267/hilady_dribbble_studiotale.gif" preview={false}/>
+               <Paragraph>Inaonekana ni mara yako ya kwanza kujiunga na <span style={{fontWeight: "bold", color: "purple", fontStyle: "italic"}}>Mchango App</span>. Tunaomba ujaze taarifa zako ili tuweze kukuhudumia vizuri.</Paragraph>
             </Col>
             <Col xs={24} sm={24} xl={8} style={{ height: "100%"}}>
                <Edit 
@@ -36,6 +36,7 @@ export const Welcome = ({formProps, saveButtonProps}: Props) => {
                      {...formProps}
                      layout="vertical"
                   >
+                     <Title style={{marginBottom: "2rem"}}>Karibu Sana!</Title>
                      <Row gutter={16}>
                      <Col span={12}>
                         <Form.Item
