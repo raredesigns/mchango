@@ -28,7 +28,7 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
   const { mode, setMode } = useContext(ColorModeContext);
 
   const headerStyles: React.CSSProperties = {
-    backgroundColor: token.colorBgElevated,
+    backgroundColor: token.colorPrimary,//token.colorBgElevated,
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",

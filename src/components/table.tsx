@@ -12,6 +12,8 @@ interface DataType {
     id: string;
     firstName: string;
     lastName: string;
+    countryCode: string;
+    mobile: string;
     amount: number;
     paid: number;
     balance: number;
@@ -23,7 +25,11 @@ const columns: TableColumnsType<DataType> = [
         key: 'fullName',
         render: (_, record) => `${record.firstName} ${record.lastName}`,
     },
-
+    {
+        title: 'Mobile',
+        key: 'mobile',
+        render: (_, record) => `${record.countryCode}${record.mobile}`,
+    },    
     {
         title: 'Ahadi',
         dataIndex: 'amount',
@@ -44,7 +50,7 @@ const columns: TableColumnsType<DataType> = [
     },
 ];
 
-export const MkekaTable = ({balance, userId}: { balance: number, userId: string }) => {
+export const MkekaTable = ({balance, userId, events, currentEvent}: { balance: number, userId: string, events: any, currentEvent: string }) => {
     const {data: mkekaList} = useList({
         resource: "mkeka",
         meta: {
@@ -57,6 +63,13 @@ export const MkekaTable = ({balance, userId}: { balance: number, userId: string 
             {
                 field: "firstName",
                 order: "asc",
+            },
+        ],
+        filters: [
+            {
+              field: "relatedEvent",
+              operator: "eq",
+              value: currentEvent
             },
         ],
     })
@@ -76,13 +89,6 @@ export const MkekaTable = ({balance, userId}: { balance: number, userId: string 
     };
 
     const stateCheck = isSelectedPledgersEmpty(selectedPledgers);
-
-    const statusChecking = () => {
-        console.log("All Pledgers: ", allPledgers);
-        console.log("Selected Pledgers: ", selectedPledgers);
-        console.log("Wadaiwa: ", wadaiwa);
-        console.log("Wamalizaji: ", wamalizaji);
-    }
 
     // Row selection configuration
     const rowSelection = {
@@ -168,8 +174,7 @@ export const MkekaTable = ({balance, userId}: { balance: number, userId: string 
         <Row gutter={[32, 32]} style={{marginTop: "18px"}}>
             {/* SMSBox: takes full width on mobile devices, 1/4 on large devices */}
             <Col xs={24} sm={24} xl={6} style={{height: "100%"}}>
-                <Button type="primary" block onClick={statusChecking}>Check States</Button>
-                <SMSBox balance={balance} userId={userId} stateCheck={stateCheck} selectedPledgers={selectedPledgers}/>
+                <SMSBox balance={balance} userId={userId} stateCheck={stateCheck} selectedPledgers={selectedPledgers} events={events}/>
             </Col>
             {/* MkekaTable: takes full width on mobile devices, 3/4 on large devices */}
             <Col xs={24} sm={24} xl={18} style={{height: "100%"}}>
