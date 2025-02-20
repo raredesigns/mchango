@@ -1,10 +1,10 @@
-import { AuthBindings } from "@refinedev/core";
+import { AuthProvider } from "@refinedev/core";
 
 import { supabaseClient } from "./utility";
 
-const authProvider: AuthBindings = {
+const authProvider: AuthProvider = {
   login: async ({ email, password, providerName }) => {
-    // sign in with oauth
+    await new Promise((resolve) => setTimeout(resolve, 2000))
     try {
       if (providerName) {
         const { data, error } = await supabaseClient.auth.signInWithOAuth({
@@ -41,8 +41,8 @@ const authProvider: AuthBindings = {
 
       if (data?.user) {
         return {
-          success: true,
-          redirectTo: "/",
+          success: true, 
+          redirectTo: "/"
         };
       }
     } catch (error: any) {

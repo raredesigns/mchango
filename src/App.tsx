@@ -30,6 +30,7 @@ import { Messaging } from "./pages/sms";
 import { Profile } from "./pages/profile";
 import { toProperCase } from "./utility/propercase";
 import { customTheme } from "./constants/custom-theme";
+import OnboardingModalWizard from "./components/onboarding/onboarding";
 
 const customTitleHandler = ({ resource, action, params }:{resource?: IResourceItem,action?: Action,params?: Record<string, string | undefined>;}) => {
   let title = "Mchango App"; // Default title
@@ -105,8 +106,8 @@ function App() {
                             type="login"
                             formProps={{
                               initialValues: {
-                                email: "info@refine.dev",
-                                password: "refine-supabase",
+                                email: "test@gmail.com",
+                                password: "12345678",
                               },
                             }}
                           />

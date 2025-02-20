@@ -17,7 +17,7 @@ export const Welcome = ({formProps, saveButtonProps}: Props) => {
                   src="https://lottie.host/c1bef571-8c0e-43e5-9afc-376eef6b5535/MmbtZYxEUu.lottie"
                   loop
                   autoplay
-               />
+               /><Image src="https://cdn.dribbble.com/users/1418633/screenshots/5400267/hilady_dribbble_studiotale.gif"/>
             </Col>
             <Col xs={24} sm={24} xl={8} style={{ height: "100%"}}>
                <Edit 

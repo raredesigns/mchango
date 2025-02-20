@@ -4,9 +4,13 @@ import { useGetIdentity, useOne, useUpdate } from '@refinedev/core';
 import { Welcome } from './welcome';
 import { EventForm } from './event-form';
 import { useForm, useModalForm } from '@refinedev/antd';
+import { supabaseClient } from '../../utility/supabaseClient';
 
 const OnboardingModalWizard: React.FC = () => {
   const {data: identity} = useGetIdentity();
+  // const userId = "3ccba219-6ca0-4587-adee-16752b7452f4"
+  // const onboardingCheck = true
+
   const userId = (identity as {id: string}).id
   const {data: onboardingCheck } = useOne({
     resource: "profiles",
@@ -34,6 +38,16 @@ const OnboardingModalWizard: React.FC = () => {
       onBoarding: "true"
     }
   })
+
+  const updateEventInAuth = async (eventId: string) =>{
+    const { data, error } = await supabaseClient.auth.updateUser({
+      data: { currentEvent: eventId }
+    })
+    if (error) {
+      console.error('Error updating eventId:', error);
+      return;
+    }
+  }  
 
   const { token } = theme.useToken();
   const [current, setCurrent] = useState(0);
@@ -71,7 +85,7 @@ const OnboardingModalWizard: React.FC = () => {
 
   return (
     <>
-        <Modal open={!onboardingCheck?.data.onBoarding} footer={null} closable={false} width="100%">
+        <Modal open={!onboardingCheck} footer={null} closable={false} width="100%">
             <Steps current={current} items={items} />
             <div style={contentStyle}>{steps[current].content}</div>
             <div style={{ marginTop: 24, display: "flex", justifyContent: "flex-end" }}>
